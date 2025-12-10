@@ -17,15 +17,15 @@ jobs:
     steps:
       # 1️⃣ Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # 🔍 DEBUG: List all files and folders in the repo
+      # 🔍 DEBUG STEP: Show full repo structure
       - name: List repository structure
-        run: ls -R ../ # shows full structure including backend
+        run: ls -R ../
 
       # 2️⃣ Setup Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
@@ -44,7 +44,7 @@ jobs:
 
       # 6️⃣ Upload coverage report
       - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: ./coverage
