@@ -10,15 +10,41 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: ./backend
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js
+      # 1️⃣ Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 🔍 DEBUG: List all files and folders in the repo
+      - name: List repository structure
+        run: ls -R ../ # shows full structure including backend
+
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+          cache: 'npm'
 
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
 
-      - name: Run tests
-        run: npm test
+      # 4️⃣ Run ESLint
+      - name: Run ESLint
+        run: npx eslint . --ext .js
+
+      # 5️⃣ Run Jest tests with coverage
+      - name: Run Jest Tests
+        run: npx jest --coverage
+
+      # 6️⃣ Upload coverage report
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: ./coverage
