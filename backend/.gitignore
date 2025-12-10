@@ -1,0 +1,55 @@
+# Node modules
+node_modules/
+*/node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# dotenv environment variables
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Virtual environments (Python — if any)
+venv/
+__pycache__/
+
+# VSCode settings
+.vscode/
+.history/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Uploads (optional — keep if you don’t want to push images)
+uploads/
+
+# Cache
+.cache/
+.temp/
+
+# Coverage / Test
+coverage/
+jest-cache/
+jest-temp/
+
+# TypeScript
+*.tsbuildinfo
+
+# GitHub Codespaces
+.devcontainer
+
+# Misc
+*.swp
+*.swo
