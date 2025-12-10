@@ -19,30 +19,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🔍 DEBUG STEP: Show full repo structure
+      # 2️⃣ Debug repo structure
       - name: List repository structure
         run: ls -R ../
 
-      # 2️⃣ Setup Node.js
+      # 3️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
-      # 3️⃣ Install dependencies
+      # 4️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 4️⃣ Run ESLint
+      # 5️⃣ Run ESLint
       - name: Run ESLint
         run: npx eslint . --ext .js
 
-      # 5️⃣ Run Jest tests with coverage
+      # 6️⃣ Run Jest Tests
       - name: Run Jest Tests
         run: npx jest --coverage
 
-      # 6️⃣ Upload coverage report
+      # 7️⃣ Upload coverage
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
