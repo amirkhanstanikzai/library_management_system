@@ -1,4 +1,6 @@
 /* eslint-env jest */
+/* @jest-environment node
+ */
 import { jest } from '@jest/globals';
 import request from 'supertest';
 import mongoose from 'mongoose';
@@ -6,9 +8,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import bcrypt from 'bcryptjs';
 import app from '../app.js';
 import User from '../models/User.js';
-/**
- * @jest-environment node
- */
+
 jest.setTimeout(30000); // 30 seconds
 
 jest.mock('../utils/sendEmail.js', () => ({
