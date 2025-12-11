@@ -1,4 +1,5 @@
 /* eslint-env jest */
+import { jest } from '@jest/globals';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
@@ -11,7 +12,6 @@ import User from '../models/User.js';
 import { jest } from '@jest/globals';
 jest.setTimeout(30000); // 30 seconds
 
-import sendEmail from '../utils/sendEmail.js';
 jest.mock('../utils/sendEmail.js', () => ({
   __esModule: true,
   default: jest.fn(),
