@@ -1,7 +1,7 @@
 /* eslint-env jest */
 /* @jest-environment node
  */
-import { jest } from '@jest/globals';
+// import { jest } from '@jest/globals';
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
