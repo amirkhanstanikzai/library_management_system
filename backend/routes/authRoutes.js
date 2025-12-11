@@ -19,10 +19,4 @@ router.post('/verify-email', verifyEmail);
 // Login
 router.post('/login', login);
 
-// Anyone logged in can see books
-router.get('/', protect, getBooks);
-
-// Only admin can create books
-router.post('/', protect, admin, createBook);
-
 export default router;
