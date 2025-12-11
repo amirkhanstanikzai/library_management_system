@@ -16,15 +16,14 @@ export default defineConfig([
   },
 
   // -----------------------------
-  // 2️⃣ Add this section for Jest tests
+  // 2️⃣ Jest test files
   // -----------------------------
   {
     files: ['**/*.test.js'],
     languageOptions: {
       globals: {
-        test: 'readonly',
-        expect: 'readonly',
-        describe: 'readonly',
+        ...globals.node, // keep Node globals
+        ...globals.jest, // add all Jest globals
       },
     },
   },
