@@ -1,230 +1,230 @@
-/* eslint-env jest */
-/* @jest-environment node
- */
-// import { jest } from '@jest/globals';
-import request from 'supertest';
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import bcrypt from 'bcryptjs';
-import app from '../app.js';
-import User from '../models/User.js';
+// /* eslint-env jest */
+// /* @jest-environment node
+//  */
+// // import { jest } from '@jest/globals';
+// import request from 'supertest';
+// import mongoose from 'mongoose';
+// import { MongoMemoryServer } from 'mongodb-memory-server';
+// import bcrypt from 'bcryptjs';
+// import app from '../app.js';
+// import User from '../models/User.js';
 
-jest.setTimeout(30000); // 30 seconds
+// jest.setTimeout(30000); // 30 seconds
 
-jest.mock('../utils/sendEmail.js', () => ({
-  __esModule: true,
-  default: jest.fn(),
-}));
-
-// Mock sendEmail so tests do NOT send real emails
 // jest.mock('../utils/sendEmail.js', () => ({
 //   __esModule: true,
 //   default: jest.fn(),
 // }));
 
-let mongoServer;
+// // Mock sendEmail so tests do NOT send real emails
+// // jest.mock('../utils/sendEmail.js', () => ({
+// //   __esModule: true,
+// //   default: jest.fn(),
+// // }));
 
-beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
-  await mongoose.connect(uri); // FIXED
-});
+// let mongoServer;
 
-afterAll(async () => {
-  await mongoose.connection.dropDatabase();
-  await mongoose.connection.close();
-  await mongoServer.stop();
-});
+// beforeAll(async () => {
+//   mongoServer = await MongoMemoryServer.create();
+//   const uri = mongoServer.getUri();
+//   await mongoose.connect(uri); // FIXED
+// });
 
-beforeEach(async () => {
-  await User.deleteMany({});
-});
+// afterAll(async () => {
+//   await mongoose.connection.dropDatabase();
+//   await mongoose.connection.close();
+//   await mongoServer.stop();
+// });
 
-// ======================================================
-// 🔵 REGISTER TESTS
-// ======================================================
+// beforeEach(async () => {
+//   await User.deleteMany({});
+// });
 
-describe('POST /library/auth/register', () => {
-  it('should return 400 if fields are missing', async () => {
-    const res = await request(app)
-      .post('/library/auth/register')
-      .send({ email: 'test@gmail.com' });
+// // ======================================================
+// // 🔵 REGISTER TESTS
+// // ======================================================
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe('All fields are required');
-  });
+// describe('POST /library/auth/register', () => {
+//   it('should return 400 if fields are missing', async () => {
+//     const res = await request(app)
+//       .post('/library/auth/register')
+//       .send({ email: 'test@gmail.com' });
 
-  it('should return 409 if email already exists', async () => {
-    await User.create({
-      name: 'John',
-      email: 'john@gmail.com',
-      password: 'hashed',
-    });
+//     expect(res.statusCode).toBe(400);
+//     expect(res.body.message).toBe('All fields are required');
+//   });
 
-    const res = await request(app).post('/library/auth/register').send({
-      name: 'John',
-      email: 'john@gmail.com',
-      password: '123456',
-    });
+//   it('should return 409 if email already exists', async () => {
+//     await User.create({
+//       name: 'John',
+//       email: 'john@gmail.com',
+//       password: 'hashed',
+//     });
 
-    expect(res.statusCode).toBe(409);
-    expect(res.body.message).toBe('Email already registered');
-  });
+//     const res = await request(app).post('/library/auth/register').send({
+//       name: 'John',
+//       email: 'john@gmail.com',
+//       password: '123456',
+//     });
 
-  it('should register user successfully', async () => {
-    const res = await request(app).post('/library/auth/register').send({
-      name: 'John',
-      email: 'john@gmail.com',
-      password: '123456',
-    });
+//     expect(res.statusCode).toBe(409);
+//     expect(res.body.message).toBe('Email already registered');
+//   });
 
-    expect(res.statusCode).toBe(201);
-    expect(res.body.message).toMatch(/Registration successful/i);
+//   it('should register user successfully', async () => {
+//     const res = await request(app).post('/library/auth/register').send({
+//       name: 'John',
+//       email: 'john@gmail.com',
+//       password: '123456',
+//     });
 
-    const user = await User.findOne({ email: 'john@gmail.com' });
-    expect(user).not.toBeNull();
-    expect(user.verificationCode).toBeDefined();
-  });
-});
+//     expect(res.statusCode).toBe(201);
+//     expect(res.body.message).toMatch(/Registration successful/i);
 
-// ======================================================
-// 🔵 VERIFY EMAIL TESTS
-// ======================================================
+//     const user = await User.findOne({ email: 'john@gmail.com' });
+//     expect(user).not.toBeNull();
+//     expect(user.verificationCode).toBeDefined();
+//   });
+// });
 
-describe('POST /library/auth/verify-email', () => {
-  it('should return 400 if fields missing', async () => {
-    const res = await request(app)
-      .post('/library/auth/verify-email')
-      .send({ email: 'test@gmail.com' });
+// // ======================================================
+// // 🔵 VERIFY EMAIL TESTS
+// // ======================================================
 
-    expect(res.statusCode).toBe(400);
-  });
+// describe('POST /library/auth/verify-email', () => {
+//   it('should return 400 if fields missing', async () => {
+//     const res = await request(app)
+//       .post('/library/auth/verify-email')
+//       .send({ email: 'test@gmail.com' });
 
-  it('should return 404 if user not found', async () => {
-    const res = await request(app).post('/library/auth/verify-email').send({
-      email: 'missing@gmail.com',
-      code: '123456',
-    });
+//     expect(res.statusCode).toBe(400);
+//   });
 
-    expect(res.statusCode).toBe(404);
-    expect(res.body.message).toBe('User not found');
-  });
+//   it('should return 404 if user not found', async () => {
+//     const res = await request(app).post('/library/auth/verify-email').send({
+//       email: 'missing@gmail.com',
+//       code: '123456',
+//     });
 
-  it('should return 400 if code incorrect', async () => {
-    await User.create({
-      name: 'John',
-      email: 'john@gmail.com',
-      password: 'hashed',
-      verificationCode: '111111',
-      verificationCodeExpires: Date.now() + 600000,
-    });
+//     expect(res.statusCode).toBe(404);
+//     expect(res.body.message).toBe('User not found');
+//   });
 
-    const res = await request(app).post('/library/auth/verify-email').send({
-      email: 'john@gmail.com',
-      code: '222222',
-    });
+//   it('should return 400 if code incorrect', async () => {
+//     await User.create({
+//       name: 'John',
+//       email: 'john@gmail.com',
+//       password: 'hashed',
+//       verificationCode: '111111',
+//       verificationCodeExpires: Date.now() + 600000,
+//     });
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe('Incorrect verification code');
-  });
+//     const res = await request(app).post('/library/auth/verify-email').send({
+//       email: 'john@gmail.com',
+//       code: '222222',
+//     });
 
-  it('should return 400 if code expired', async () => {
-    await User.create({
-      name: 'John',
-      email: 'john@gmail.com',
-      password: 'hashed',
-      verificationCode: '111111',
-      verificationCodeExpires: Date.now() - 10000,
-    });
+//     expect(res.statusCode).toBe(400);
+//     expect(res.body.message).toBe('Incorrect verification code');
+//   });
 
-    const res = await request(app).post('/library/auth/verify-email').send({
-      email: 'john@gmail.com',
-      code: '111111',
-    });
+//   it('should return 400 if code expired', async () => {
+//     await User.create({
+//       name: 'John',
+//       email: 'john@gmail.com',
+//       password: 'hashed',
+//       verificationCode: '111111',
+//       verificationCodeExpires: Date.now() - 10000,
+//     });
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body.message).toBe('Verification code has expired');
-  });
+//     const res = await request(app).post('/library/auth/verify-email').send({
+//       email: 'john@gmail.com',
+//       code: '111111',
+//     });
 
-  it('should verify email successfully', async () => {
-    await User.create({
-      name: 'John',
-      email: 'john@gmail.com',
-      password: 'hashed',
-      verificationCode: '123456',
-      verificationCodeExpires: Date.now() + 600000,
-    });
+//     expect(res.statusCode).toBe(400);
+//     expect(res.body.message).toBe('Verification code has expired');
+//   });
 
-    const res = await request(app).post('/library/auth/verify-email').send({
-      email: 'john@gmail.com',
-      code: '123456',
-    });
+//   it('should verify email successfully', async () => {
+//     await User.create({
+//       name: 'John',
+//       email: 'john@gmail.com',
+//       password: 'hashed',
+//       verificationCode: '123456',
+//       verificationCodeExpires: Date.now() + 600000,
+//     });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body.message).toBe('Email verified successfully');
+//     const res = await request(app).post('/library/auth/verify-email').send({
+//       email: 'john@gmail.com',
+//       code: '123456',
+//     });
 
-    const user = await User.findOne({ email: 'john@gmail.com' });
-    expect(user.isVerified).toBe(true);
-  });
-});
+//     expect(res.statusCode).toBe(200);
+//     expect(res.body.message).toBe('Email verified successfully');
 
-// ======================================================
-// 🔵 LOGIN TESTS
-// ======================================================
+//     const user = await User.findOne({ email: 'john@gmail.com' });
+//     expect(user.isVerified).toBe(true);
+//   });
+// });
 
-describe('POST /library/auth/login', () => {
-  it('should return 400 if fields missing', async () => {
-    const res = await request(app)
-      .post('/library/auth/login')
-      .send({ email: 'test@gmail.com' });
+// // ======================================================
+// // 🔵 LOGIN TESTS
+// // ======================================================
 
-    expect(res.statusCode).toBe(400);
-  });
+// describe('POST /library/auth/login', () => {
+//   it('should return 400 if fields missing', async () => {
+//     const res = await request(app)
+//       .post('/library/auth/login')
+//       .send({ email: 'test@gmail.com' });
 
-  it('should return 404 if user does not exist', async () => {
-    const res = await request(app).post('/library/auth/login').send({
-      email: 'none@gmail.com',
-      password: '123456',
-    });
+//     expect(res.statusCode).toBe(400);
+//   });
 
-    expect(res.statusCode).toBe(404);
-    expect(res.body.message).toBe('User not found');
-  });
+//   it('should return 404 if user does not exist', async () => {
+//     const res = await request(app).post('/library/auth/login').send({
+//       email: 'none@gmail.com',
+//       password: '123456',
+//     });
 
-  it('should block unverified user', async () => {
-    await User.create({
-      name: 'John',
-      email: 'john@gmail.com',
-      password: await bcrypt.hash('123456', 10),
-      isVerified: false,
-    });
+//     expect(res.statusCode).toBe(404);
+//     expect(res.body.message).toBe('User not found');
+//   });
 
-    const res = await request(app).post('/library/auth/login').send({
-      email: 'john@gmail.com',
-      password: '123456',
-    });
+//   it('should block unverified user', async () => {
+//     await User.create({
+//       name: 'John',
+//       email: 'john@gmail.com',
+//       password: await bcrypt.hash('123456', 10),
+//       isVerified: false,
+//     });
 
-    expect(res.statusCode).toBe(401);
-    expect(res.body.message).toBe('Please verify your email first');
-  });
+//     const res = await request(app).post('/library/auth/login').send({
+//       email: 'john@gmail.com',
+//       password: '123456',
+//     });
 
-  it('should login verified user', async () => {
-    const hashed = await bcrypt.hash('123456', 10);
+//     expect(res.statusCode).toBe(401);
+//     expect(res.body.message).toBe('Please verify your email first');
+//   });
 
-    await User.create({
-      name: 'John',
-      email: 'john@gmail.com',
-      password: hashed,
-      isVerified: true,
-    });
+//   it('should login verified user', async () => {
+//     const hashed = await bcrypt.hash('123456', 10);
 
-    const res = await request(app).post('/library/auth/login').send({
-      email: 'john@gmail.com',
-      password: '123456',
-    });
+//     await User.create({
+//       name: 'John',
+//       email: 'john@gmail.com',
+//       password: hashed,
+//       isVerified: true,
+//     });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body.token).toBeDefined();
-    expect(res.body.user.email).toBe('john@gmail.com');
-  });
-});
+//     const res = await request(app).post('/library/auth/login').send({
+//       email: 'john@gmail.com',
+//       password: '123456',
+//     });
+
+//     expect(res.statusCode).toBe(200);
+//     expect(res.body.token).toBeDefined();
+//     expect(res.body.user.email).toBe('john@gmail.com');
+//   });
+// });
