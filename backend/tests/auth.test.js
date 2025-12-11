@@ -9,7 +9,6 @@ import User from '../models/User.js';
 /**
  * @jest-environment node
  */
-import { jest } from '@jest/globals';
 jest.setTimeout(30000); // 30 seconds
 
 jest.mock('../utils/sendEmail.js', () => ({
