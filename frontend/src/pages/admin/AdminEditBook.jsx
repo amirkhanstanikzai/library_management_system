@@ -127,17 +127,6 @@ export default function EditBook() {
           </div>
 
           <div>
-            <label className="font-semibold">Genre</label>
-            <input
-              type="text"
-              name="genre"
-              value={form.genre}
-              onChange={handleChange}
-              className="input input-bordered w-full"
-            />
-          </div>
-
-          <div>
             <label className="font-semibold">Total Copies *</label>
             <input
               type="number"
