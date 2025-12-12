@@ -11,6 +11,7 @@ import AdminManageBooks from './pages/admin/AdminManageBooks';
 import AdminBorrowedBooks from './pages/admin/AdminBorrowedBooks';
 import AdminReturnBook from './pages/admin/AdminReturnBook';
 import AdminEditBook from './pages/admin/AdminEditBook';
+import BookDetail from './pages/BookDetail';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/admin/borrowed" element={<AdminBorrowedBooks />} />
         <Route path="/admin/return" element={<AdminReturnBook />} />
         <Route path="/admin/edit-book/:id" element={<AdminEditBook />} />
+        <Route path="/book/detail/:id" element={<BookDetail />} />
       </Routes>
     </Router>
   );

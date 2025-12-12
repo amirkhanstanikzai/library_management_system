@@ -233,3 +233,13 @@ export const getBookById = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
+// controllers/bookController.js
+export const getBooksPublic = async (req, res) => {
+  try {
+    const books = await Book.find({});
+    res.json(books);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to load books' });
+  }
+};

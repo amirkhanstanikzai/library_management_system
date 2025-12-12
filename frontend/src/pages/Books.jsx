@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 export default function Books() {
@@ -8,6 +9,8 @@ export default function Books() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sort, setSort] = useState('title-asc');
+
+  const navigate = useNavigate();
 
   const categories = [
     'All',
@@ -21,14 +24,20 @@ export default function Books() {
 
   useEffect(() => {
     const fetchBooks = async () => {
+      setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const { data } = await axios.get(
-          'http://localhost:5000/library/books',
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+
+        // Use public route if not logged in
+        const url = token
+          ? 'http://localhost:5000/library/books'
+          : 'http://localhost:5000/library/books/public';
+
+        const config = token
+          ? { headers: { Authorization: `Bearer ${token}` } }
+          : {};
+
+        const { data } = await axios.get(url, config);
         setBooks(data);
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load books');
@@ -66,6 +75,7 @@ export default function Books() {
         Loading books...
       </div>
     );
+
   if (error)
     return (
       <div className="min-h-screen flex justify-center items-center text-red-500">
@@ -107,16 +117,22 @@ export default function Books() {
           {filteredBooks.length === 0 && (
             <p className="col-span-full text-lg opacity-70">No books found.</p>
           )}
+
           {filteredBooks.map((book) => {
             const available = book.totalCopies - book.borrowedCopies > 0;
             return (
               <div
                 key={book._id}
-                className="card bg-base-200 shadow-md hover:shadow-xl"
+                className="card bg-base-200 shadow-md hover:shadow-xl cursor-pointer transition"
+                onClick={() => navigate(`/book/detail/${book._id}`)}
               >
                 <figure className="px-5 pt-5">
                   <img
-                    src={`http://localhost:5000/${book.image}`}
+                    src={
+                      book.image
+                        ? `http://localhost:5000/${book.image}`
+                        : '/no-image.png'
+                    }
                     alt={book.title}
                     className="w-32 h-32 object-cover"
                   />
@@ -141,14 +157,6 @@ export default function Books() {
                   >
                     {available ? 'Available' : 'Not Available'}
                   </p>
-                  <div className="card-actions justify-end">
-                    <button
-                      className="btn btn-primary btn-sm"
-                      disabled={!available}
-                    >
-                      Borrow
-                    </button>
-                  </div>
                 </div>
               </div>
             );

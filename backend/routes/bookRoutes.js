@@ -11,6 +11,7 @@ import {
   getMyBorrowedBooks,
   getBookBorrowers,
   getBookById,
+  getBooksPublic,
 } from '../controllers/bookController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { admin } from '../middleware/adminMiddleware.js';
@@ -43,6 +44,11 @@ const upload = multer({ storage, fileFilter });
 // =======================
 // Routes
 // =======================
+
+// Public: Get book detail (no login needed)
+router.get('/public/:id', getBookById);
+// GET all books (public)
+router.get('/public', getBooksPublic);
 
 // Get all books
 router.get('/', protect, getBooks);
