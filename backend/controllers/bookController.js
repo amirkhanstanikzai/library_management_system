@@ -181,30 +181,55 @@ export const borrowBook = async (req, res) => {
 // ===============================
 // RETURN BOOK (User)
 // ===============================
+// ===============================
+// RETURN BOOK (User + Admin)
+// ===============================
 export const returnBook = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) return res.status(404).json({ message: 'Book not found' });
 
+    // User returning their own OR admin specifying a user
+    const userId = req.body.userId || req.user._id.toString();
+
     const borrowerIndex = book.borrowers.findIndex(
-      (b) => b.user.toString() === req.user._id.toString()
+      (b) => b.user.toString() === userId
     );
 
     if (borrowerIndex === -1) {
       return res
         .status(400)
-        .json({ message: 'You have not borrowed this book' });
+        .json({ message: 'This user has not borrowed this book' });
     }
 
-    book.borrowedCopies--;
+    // Update book stats
+    book.borrowedCopies = Math.max(0, book.borrowedCopies - 1);
     book.borrowers.splice(borrowerIndex, 1);
 
     await book.save();
-    res.json({ message: 'Book returned successfully', book });
+
+    res.json({
+      message: 'Book returned successfully',
+      book,
+    });
   } catch (error) {
     console.error('Return Book Error:', error);
-    res
-      .status(500)
-      .json({ message: 'Internal Server Error', error: error.message });
+    res.status(500).json({
+      message: 'Internal Server Error',
+      error: error.message,
+    });
+  }
+};
+
+// GET single book by ID
+export const getBookById = async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).json({ message: 'Book not found' });
+
+    res.json(book);
+  } catch (error) {
+    console.error('Get Book By ID Error:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };

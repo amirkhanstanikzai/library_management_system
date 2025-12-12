@@ -17,8 +17,10 @@ app.use(express.json());
 app.use('/library/auth', authRoutes);
 app.use('/library/books', bookRoutes);
 
-// Serve uploaded images
-app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
+// // Serve uploaded images
+// app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
+// Serve uploads folder
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Test route
 app.get('/', (req, res) => {
