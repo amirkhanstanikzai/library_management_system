@@ -230,7 +230,7 @@ export const getBookById = async (req, res) => {
     res.json(book);
   } catch (error) {
     console.error('Get Book By ID Error:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    res.status(500).json({ message: 'Internal Server Error' + error.message });
   }
 };
 
@@ -240,6 +240,6 @@ export const getBooksPublic = async (req, res) => {
     const books = await Book.find({});
     res.json(books);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to load books' });
+    res.status(500).json({ message: 'Failed to load books' + error.message });
   }
 };
