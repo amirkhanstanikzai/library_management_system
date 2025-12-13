@@ -12,6 +12,7 @@ import {
   getBookBorrowers,
   getBookById,
   getBooksPublic,
+  getCategories,
 } from '../controllers/bookController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { admin } from '../middleware/adminMiddleware.js';
@@ -79,5 +80,7 @@ router.post('/:id/return', protect, returnBook);
 
 // Get single book
 router.get('/:id', protect, getBookById);
+
+router.get('/categories', getCategories); // ✅ get book by category
 
 export default router;

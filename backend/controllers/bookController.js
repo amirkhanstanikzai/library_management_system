@@ -4,10 +4,14 @@ import fs from 'fs';
 // CREATE BOOK (Admin Only)
 export const createBook = async (req, res) => {
   try {
-    const { title, author, description, totalCopies } = req.body;
+    const { title, author, description, totalCopies, category } = req.body;
 
     if (!title || !author) {
       return res.status(400).json({ message: 'Title and author are required' });
+    }
+
+    if (!category) {
+      return res.status(400).json({ message: 'Category is required' });
     }
 
     let imagePath = '';
@@ -20,6 +24,7 @@ export const createBook = async (req, res) => {
       author,
       description,
       totalCopies: totalCopies || 1,
+      category, // ✅ Added category
       image: imagePath,
     });
 
@@ -48,13 +53,11 @@ export const getBooks = async (req, res) => {
 // GET BOOKS BORROWED BY LOGGED-IN USER (FIXED)
 export const getMyBorrowedBooks = async (req, res) => {
   try {
-    // Find books where the logged-in user is a borrower
     const books = await Book.find({ 'borrowers.user': req.user._id }).populate(
       'borrowers.user',
       'name email'
     );
 
-    // Map each book to include only the borrower object for the logged-in user
     const userBooks = books.map((book) => {
       const borrower = book.borrowers.find(
         (b) => b.user._id.toString() === req.user._id.toString()
@@ -68,7 +71,7 @@ export const getMyBorrowedBooks = async (req, res) => {
         image: book.image,
         totalCopies: book.totalCopies,
         borrowedCopies: book.borrowedCopies,
-        borrower, // only the logged-in user's borrow object
+        borrower,
       };
     });
 
@@ -106,12 +109,13 @@ export const updateBook = async (req, res) => {
     const book = await Book.findById(req.params.id);
     if (!book) return res.status(404).json({ message: 'Book not found' });
 
-    const { title, author, description, totalCopies } = req.body;
+    const { title, author, description, totalCopies, category } = req.body;
 
     if (title) book.title = title;
     if (author) book.author = author;
     if (description) book.description = description;
     if (totalCopies) book.totalCopies = totalCopies;
+    if (category) book.category = category; // ✅ Update category
 
     if (req.file) {
       if (book.image && fs.existsSync(book.image)) fs.unlinkSync(book.image);
@@ -197,7 +201,6 @@ export const returnBook = async (req, res) => {
     const borrower = book.borrowers[borrowerIndex];
 
     if (adminConfirm) {
-      // Admin confirming return
       borrower.returnedAt = new Date();
       book.borrowedCopies = Math.max(0, book.borrowedCopies - 1);
       book.borrowers.splice(borrowerIndex, 1);
@@ -205,7 +208,6 @@ export const returnBook = async (req, res) => {
       await book.save();
       return res.json({ message: 'Return confirmed by admin', book });
     } else {
-      // User requesting return
       borrower.returnRequested = true;
       await book.save();
       return res.json({
@@ -241,5 +243,16 @@ export const getBooksPublic = async (req, res) => {
     res.json(books);
   } catch (error) {
     res.status(500).json({ message: 'Failed to load books' + error.message });
+  }
+};
+
+// GET DISTINCT CATEGORIES
+export const getCategories = async (req, res) => {
+  try {
+    const categories = await Book.distinct('category');
+    res.json(categories);
+  } catch (error) {
+    console.error('Get Categories Error:', error);
+    res.status(500).json({ message: 'Failed to fetch categories' });
   }
 };

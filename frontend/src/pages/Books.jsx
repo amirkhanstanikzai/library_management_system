@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
 export default function Books() {
@@ -9,36 +9,54 @@ export default function Books() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sort, setSort] = useState('title-asc');
+  const [categories, setCategories] = useState(['All']); // dynamic categories
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [booksPerPage, setBooksPerPage] = useState(10);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const categories = [
-    'All',
-    'Fiction',
-    'Programming',
-    'Business',
-    'History',
-    'Self-Help',
-    'Science',
-  ];
+  // Adjust books per page based on screen width
+  useEffect(() => {
+    const updateBooksPerPage = () => {
+      setBooksPerPage(window.innerWidth < 768 ? 5 : 10);
+    };
+    updateBooksPerPage();
+    window.addEventListener('resize', updateBooksPerPage);
+    return () => window.removeEventListener('resize', updateBooksPerPage);
+  }, []);
 
+  // Check for category query param
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const categoryParam = params.get('category');
+    if (categoryParam) setSelectedCategory(categoryParam);
+  }, [location.search]);
+
+  // Fetch books and categories
   useEffect(() => {
     const fetchBooks = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
-
-        // Use public route if not logged in
         const url = token
           ? 'http://localhost:5000/library/books'
           : 'http://localhost:5000/library/books/public';
-
         const config = token
           ? { headers: { Authorization: `Bearer ${token}` } }
           : {};
 
         const { data } = await axios.get(url, config);
         setBooks(data);
+
+        // Extract unique categories dynamically
+        const uniqueCategories = [
+          'All',
+          ...new Set(data.map((b) => b.category).filter(Boolean)),
+        ];
+        setCategories(uniqueCategories);
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load books');
       } finally {
@@ -49,6 +67,7 @@ export default function Books() {
     fetchBooks();
   }, []);
 
+  // Filtered and sorted books (search by title, author, category)
   const filteredBooks = books
     .filter((b) =>
       selectedCategory === 'All' ? true : b.category === selectedCategory
@@ -56,7 +75,10 @@ export default function Books() {
     .filter((b) =>
       search === ''
         ? true
-        : b.title.toLowerCase().includes(search.toLowerCase())
+        : b.title.toLowerCase().includes(search.toLowerCase()) ||
+          b.author.toLowerCase().includes(search.toLowerCase()) ||
+          (b.category &&
+            b.category.toLowerCase().includes(search.toLowerCase()))
     )
     .sort((a, b) => {
       if (sort === 'title-asc') return a.title.localeCompare(b.title);
@@ -68,6 +90,12 @@ export default function Books() {
       }
       return 0;
     });
+
+  // Pagination logic
+  const indexOfLastBook = currentPage * booksPerPage;
+  const indexOfFirstBook = indexOfLastBook - booksPerPage;
+  const currentBooks = filteredBooks.slice(indexOfFirstBook, indexOfLastBook);
+  const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
 
   if (loading)
     return (
@@ -85,20 +113,21 @@ export default function Books() {
 
   return (
     <div className="min-h-screen p-4 md:p-10 flex flex-col md:flex-row gap-6 bg-base-100">
-      {/* Sidebar for md+ screens */}
+      {/* Sidebar */}
       <aside className="w-full md:w-64 bg-base-200 p-5 rounded-lg md:sticky md:top-20 shadow">
         <h2 className="text-2xl font-bold mb-4">Filters</h2>
 
-        {/* Search Input */}
         <input
           type="text"
           placeholder="Search..."
           className="input input-bordered w-full mb-4"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset to first page on search
+          }}
         />
 
-        {/* Category Filter */}
         <h3 className="font-semibold mb-2">Category</h3>
         <ul className="menu bg-base-200 rounded-box flex flex-wrap md:flex-col gap-1">
           {categories.map((cat) => (
@@ -107,7 +136,10 @@ export default function Books() {
                 className={`cursor-pointer ${
                   selectedCategory === cat ? 'active' : ''
                 }`}
-                onClick={() => setSelectedCategory(cat)}
+                onClick={() => {
+                  setSelectedCategory(cat);
+                  setCurrentPage(1); // reset page on category change
+                }}
               >
                 {cat}
               </a>
@@ -115,7 +147,6 @@ export default function Books() {
           ))}
         </ul>
 
-        {/* Sort Options (responsive) */}
         <div className="mt-4">
           <h3 className="font-semibold mb-2">Sort By</h3>
           <select
@@ -132,16 +163,18 @@ export default function Books() {
 
       {/* Books Grid */}
       <main className="flex-1">
-        <h1 className="text-4xl font-bold mb-6 text-center md:text-left">Books</h1>
+        <h1 className="text-4xl font-bold mb-6 text-center md:text-left">
+          Books
+        </h1>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredBooks.length === 0 && (
+          {currentBooks.length === 0 && (
             <p className="col-span-full text-lg opacity-70 text-center">
               No books found.
             </p>
           )}
 
-          {filteredBooks.map((book) => {
+          {currentBooks.map((book) => {
             const available = book.totalCopies - book.borrowedCopies > 0;
             return (
               <div
@@ -168,7 +201,8 @@ export default function Books() {
                   <p className="font-semibold">
                     Copies:{' '}
                     <span className="text-blue-500">
-                      {book.totalCopies - book.borrowedCopies}/{book.totalCopies}
+                      {book.totalCopies - book.borrowedCopies}/
+                      {book.totalCopies}
                     </span>
                   </p>
                   <p
@@ -183,6 +217,23 @@ export default function Books() {
             );
           })}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-6 gap-2 flex-wrap">
+            {Array.from({ length: totalPages }, (_, idx) => (
+              <button
+                key={idx + 1}
+                className={`btn btn-sm ${
+                  currentPage === idx + 1 ? 'btn-primary' : 'btn-outline'
+                }`}
+                onClick={() => setCurrentPage(idx + 1)}
+              >
+                {idx + 1}
+              </button>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

@@ -13,14 +13,14 @@ export default function EditBook() {
     totalCopies: 1,
     image: '',
     description: '',
+    category: '', // ✅ Added category
   });
 
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState({ message: '', type: '' }); // type: success | error
+  const [status, setStatus] = useState({ message: '', type: '' });
 
-  const backendURL = 'http://localhost:5000/'; // Backend base URL
+  const backendURL = 'http://localhost:5000/';
 
-  // Fetch book details
   const fetchBook = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -28,15 +28,16 @@ export default function EditBook() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Prepend backend URL to image if it exists
       const bookData = res.data;
       if (bookData.image) {
         bookData.image = backendURL + bookData.image;
       }
 
-      setForm(bookData);
+      setForm({
+        ...bookData,
+        category: bookData.category || '', // ✅ Prefill category
+      });
     } catch (error) {
-      console.error('Failed to load book:', error.response?.data || error);
       setStatus({ message: 'Failed to load book', type: 'error' });
     }
     setLoading(false);
@@ -68,30 +69,29 @@ export default function EditBook() {
       });
 
       setStatus({ message: 'Book updated successfully!', type: 'success' });
-
-      // Redirect to books after 1.5 seconds
       setTimeout(() => navigate('/admin/books'), 1500);
     } catch (error) {
-      console.error('Update failed:', error.response?.data || error);
       setStatus({ message: 'Update failed. Try again.', type: 'error' });
     }
   };
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center text-xl">
+      <div className="min-h-screen flex items-center justify-center text-lg sm:text-xl">
         Loading book...
       </div>
     );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 p-4">
-      <div className="w-full max-w-3xl bg-base-100 p-8 shadow-xl rounded-md">
-        <h1 className="text-4xl font-bold mb-6 text-center">✏️ Edit Book</h1>
+    <div className="min-h-screen flex items-center justify-center bg-base-200 p-4 sm:p-6 md:p-8">
+      <div className="w-full max-w-md sm:max-w-xl md:max-w-3xl bg-base-100 p-4 sm:p-6 md:p-8 shadow-xl rounded-md">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 text-center">
+          ✏️ Edit Book
+        </h1>
 
         {status.message && (
           <div
-            className={`mb-4 p-3 rounded ${
+            className={`mb-4 p-3 rounded text-sm sm:text-base ${
               status.type === 'success'
                 ? 'bg-green-100 text-green-700'
                 : 'bg-red-100 text-red-700'
@@ -140,6 +140,18 @@ export default function EditBook() {
           </div>
 
           <div>
+            <label className="font-semibold">Category *</label>
+            <input
+              type="text"
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              className="input input-bordered w-full"
+              required
+            />
+          </div>
+
+          <div>
             <label className="font-semibold">Image URL</label>
             <input
               type="text"
@@ -152,7 +164,7 @@ export default function EditBook() {
               <img
                 src={form.image}
                 alt="book"
-                className="w-32 mt-2 rounded-md shadow"
+                className="w-24 sm:w-32 mt-2 rounded-md shadow"
               />
             )}
           </div>
@@ -168,7 +180,7 @@ export default function EditBook() {
             />
           </div>
 
-          <button className="btn btn-primary w-full text-lg">
+          <button className="btn btn-primary w-full text-base sm:text-lg">
             Save Changes
           </button>
         </form>
