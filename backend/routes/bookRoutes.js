@@ -47,10 +47,11 @@ const upload = multer({ storage, fileFilter });
 
 // Public: Get book detail (no login needed)
 router.get('/public/:id', getBookById);
-// GET all books (public)
+
+// Public: Get all books (no login needed)
 router.get('/public', getBooksPublic);
 
-// Get all books
+// Get all books (protected, any logged-in user)
 router.get('/', protect, getBooks);
 
 // Get books borrowed by logged-in user
@@ -71,7 +72,9 @@ router.delete('/:id', protect, admin, deleteBook);
 // User: borrow book
 router.post('/:id/borrow', protect, borrowBook);
 
-// User: return book
+// User/Admin: return book
+// Users send { userId: their own ID } for return request
+// Admins send { userId, adminConfirm: true } to confirm return
 router.post('/:id/return', protect, returnBook);
 
 // Get single book

@@ -26,13 +26,11 @@ export default function Login() {
       // Save JWT token
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      // Redirect to home with state
-      navigate('/', { state: { loggedIn: true } });
 
       setMessage('Login successful!');
 
-      // Redirect to home
-      setTimeout(() => navigate('/'), 1000);
+      // ✅ Redirect to home and pass user via state
+      navigate('/', { state: { loggedIn: true, user: data.user } });
     } catch (err) {
       setMessage(err.response?.data?.message || 'Login failed');
     } finally {

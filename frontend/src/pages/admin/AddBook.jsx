@@ -49,8 +49,6 @@ export default function AddBook() {
       );
 
       setMessage({ type: 'success', text: 'Book added successfully!' });
-
-      // Redirect to books page after a short delay
       setTimeout(() => navigate('/admin/books'), 1500);
     } catch (error) {
       console.error(error);
@@ -63,9 +61,11 @@ export default function AddBook() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 sm:px-6 md:px-10 py-10">
       <div className="w-full max-w-2xl">
-        <h1 className="text-4xl font-bold mb-8 text-center">➕ Add New Book</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold mb-8 text-center">
+          ➕ Add New Book
+        </h1>
 
         {message.text && (
           <div
@@ -81,34 +81,34 @@ export default function AddBook() {
 
         <form
           onSubmit={handleSubmit}
-          className="card bg-base-100 shadow-xl p-8"
+          className="card bg-base-100 shadow-xl p-6 sm:p-8 md:p-10 space-y-4"
         >
-          <div className="form-control mb-4">
+          <div className="form-control w-full">
             <label className="label font-semibold">Title *</label>
             <input
               type="text"
-              className="input input-bordered"
+              className="input input-bordered w-full"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
             />
           </div>
 
-          <div className="form-control mb-4">
+          <div className="form-control w-full">
             <label className="label font-semibold">Author *</label>
             <input
               type="text"
-              className="input input-bordered"
+              className="input input-bordered w-full"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
               required
             />
           </div>
 
-          <div className="form-control mb-4">
+          <div className="form-control w-full">
             <label className="label font-semibold">Description *</label>
             <textarea
-              className="textarea textarea-bordered"
+              className="textarea textarea-bordered w-full"
               rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -116,11 +116,11 @@ export default function AddBook() {
             ></textarea>
           </div>
 
-          <div className="form-control mb-4">
+          <div className="form-control w-full">
             <label className="label font-semibold">Total Copies *</label>
             <input
               type="number"
-              className="input input-bordered"
+              className="input input-bordered w-full"
               min="1"
               value={totalCopies}
               onChange={(e) => setTotalCopies(e.target.value)}
@@ -128,17 +128,17 @@ export default function AddBook() {
             />
           </div>
 
-          <div className="form-control mb-4">
+          <div className="form-control w-full">
             <label className="label font-semibold">Book Image (optional)</label>
             <input
               type="file"
-              className="file-input file-input-bordered"
+              className="file-input file-input-bordered w-full"
               accept="image/*"
               onChange={(e) => setImage(e.target.files[0])}
             />
           </div>
 
-          <button className="btn btn-primary mt-4 w-full" disabled={loading}>
+          <button className="btn btn-primary w-full mt-4" disabled={loading}>
             {loading ? 'Adding...' : 'Add Book'}
           </button>
         </form>

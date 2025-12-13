@@ -1,9 +1,7 @@
 import Book from '../models/Book.js';
 import fs from 'fs';
 
-// ===============================
 // CREATE BOOK (Admin Only)
-// ===============================
 export const createBook = async (req, res) => {
   try {
     const { title, author, description, totalCopies } = req.body;
@@ -34,9 +32,7 @@ export const createBook = async (req, res) => {
   }
 };
 
-// ===============================
 // GET ALL BOOKS (Any logged-in user)
-// ===============================
 export const getBooks = async (req, res) => {
   try {
     const books = await Book.find().populate('borrowers.user', 'name email');
@@ -49,16 +45,34 @@ export const getBooks = async (req, res) => {
   }
 };
 
-// ===============================
-// GET BOOKS BORROWED BY LOGGED-IN USER
-// ===============================
+// GET BOOKS BORROWED BY LOGGED-IN USER (FIXED)
 export const getMyBorrowedBooks = async (req, res) => {
   try {
-    const books = await Book.find({
-      'borrowers.user': req.user._id,
-    }).populate('borrowers.user', 'name email');
+    // Find books where the logged-in user is a borrower
+    const books = await Book.find({ 'borrowers.user': req.user._id }).populate(
+      'borrowers.user',
+      'name email'
+    );
 
-    res.json(books);
+    // Map each book to include only the borrower object for the logged-in user
+    const userBooks = books.map((book) => {
+      const borrower = book.borrowers.find(
+        (b) => b.user._id.toString() === req.user._id.toString()
+      );
+
+      return {
+        _id: book._id,
+        title: book.title,
+        author: book.author,
+        description: book.description,
+        image: book.image,
+        totalCopies: book.totalCopies,
+        borrowedCopies: book.borrowedCopies,
+        borrower, // only the logged-in user's borrow object
+      };
+    });
+
+    res.json(userBooks);
   } catch (error) {
     console.error('Get My Borrowed Books Error:', error);
     res
@@ -67,9 +81,7 @@ export const getMyBorrowedBooks = async (req, res) => {
   }
 };
 
-// ===============================
 // GET ALL BORROWERS FOR A BOOK (ADMIN)
-// ===============================
 export const getBookBorrowers = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id).populate(
@@ -88,9 +100,7 @@ export const getBookBorrowers = async (req, res) => {
   }
 };
 
-// ===============================
 // UPDATE BOOK (Admin Only)
-// ===============================
 export const updateBook = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
@@ -104,9 +114,7 @@ export const updateBook = async (req, res) => {
     if (totalCopies) book.totalCopies = totalCopies;
 
     if (req.file) {
-      if (book.image && fs.existsSync(book.image)) {
-        fs.unlinkSync(book.image);
-      }
+      if (book.image && fs.existsSync(book.image)) fs.unlinkSync(book.image);
       book.image = req.file.path;
     }
 
@@ -120,20 +128,14 @@ export const updateBook = async (req, res) => {
   }
 };
 
-// ===============================
 // DELETE BOOK (Admin Only)
-// ===============================
 export const deleteBook = async (req, res) => {
   try {
     const book = await Book.findByIdAndDelete(req.params.id);
 
-    if (!book) {
-      return res.status(404).json({ message: 'Book not found' });
-    }
+    if (!book) return res.status(404).json({ message: 'Book not found' });
 
-    if (book.image && fs.existsSync(book.image)) {
-      fs.unlinkSync(book.image);
-    }
+    if (book.image && fs.existsSync(book.image)) fs.unlinkSync(book.image);
 
     res.json({ message: 'Book deleted successfully' });
   } catch (error) {
@@ -144,26 +146,22 @@ export const deleteBook = async (req, res) => {
   }
 };
 
-// ===============================
 // BORROW BOOK (User)
-// ===============================
 export const borrowBook = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) return res.status(404).json({ message: 'Book not found' });
 
-    if (book.borrowedCopies >= book.totalCopies) {
+    if (book.borrowedCopies >= book.totalCopies)
       return res.status(400).json({ message: 'No copies available' });
-    }
 
     const alreadyBorrowed = book.borrowers.some(
       (b) => b.user.toString() === req.user._id.toString()
     );
-    if (alreadyBorrowed) {
+    if (alreadyBorrowed)
       return res
         .status(400)
         .json({ message: 'You already borrowed this book' });
-    }
 
     book.borrowedCopies++;
     book.borrowers.push({ user: req.user._id });
@@ -178,46 +176,48 @@ export const borrowBook = async (req, res) => {
   }
 };
 
-// ===============================
-// RETURN BOOK (User)
-// ===============================
-// ===============================
 // RETURN BOOK (User + Admin)
-// ===============================
 export const returnBook = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) return res.status(404).json({ message: 'Book not found' });
 
-    // User returning their own OR admin specifying a user
-    const userId = req.body.userId || req.user._id.toString();
+    const { userId, adminConfirm } = req.body;
+    const targetUserId = userId || req.user._id.toString();
 
     const borrowerIndex = book.borrowers.findIndex(
-      (b) => b.user.toString() === userId
+      (b) => b.user.toString() === targetUserId
     );
 
-    if (borrowerIndex === -1) {
+    if (borrowerIndex === -1)
       return res
         .status(400)
         .json({ message: 'This user has not borrowed this book' });
+
+    const borrower = book.borrowers[borrowerIndex];
+
+    if (adminConfirm) {
+      // Admin confirming return
+      borrower.returnedAt = new Date();
+      book.borrowedCopies = Math.max(0, book.borrowedCopies - 1);
+      book.borrowers.splice(borrowerIndex, 1);
+
+      await book.save();
+      return res.json({ message: 'Return confirmed by admin', book });
+    } else {
+      // User requesting return
+      borrower.returnRequested = true;
+      await book.save();
+      return res.json({
+        message: 'Return requested. Admin must approve.',
+        book,
+      });
     }
-
-    // Update book stats
-    book.borrowedCopies = Math.max(0, book.borrowedCopies - 1);
-    book.borrowers.splice(borrowerIndex, 1);
-
-    await book.save();
-
-    res.json({
-      message: 'Book returned successfully',
-      book,
-    });
   } catch (error) {
     console.error('Return Book Error:', error);
-    res.status(500).json({
-      message: 'Internal Server Error',
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({ message: 'Internal Server Error', error: error.message });
   }
 };
 
@@ -234,7 +234,7 @@ export const getBookById = async (req, res) => {
   }
 };
 
-// controllers/bookController.js
+// GET books (public)
 export const getBooksPublic = async (req, res) => {
   try {
     const books = await Book.find({});

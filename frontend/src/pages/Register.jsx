@@ -31,12 +31,14 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-100 px-4">
-      <div className="w-full max-w-md bg-base-200 p-8 rounded-lg shadow">
-        <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
+    <div className="min-h-screen flex items-center justify-center bg-base-100 px-4 sm:px-6 md:px-10 lg:px-20">
+      <div className="w-full max-w-md sm:max-w-lg bg-base-200 p-6 sm:p-8 md:p-10 rounded-lg shadow">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center">Register</h2>
 
         {error && (
-          <div className="mb-4 text-center text-sm text-red-500">{error}</div>
+          <div className="mb-4 text-center text-sm sm:text-base text-red-500">
+            {error}
+          </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">

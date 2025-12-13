@@ -6,6 +6,7 @@ export default function AdminReturnBook() {
   const [selectedBook, setSelectedBook] = useState(null);
   const [borrowers, setBorrowers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState(''); // for inline messages
 
   const token = localStorage.getItem('token');
 
@@ -23,7 +24,7 @@ export default function AdminReturnBook() {
       setLoading(false);
     } catch (err) {
       console.error(err);
-      alert('Failed to load books');
+      setMessage('❌ Failed to load books');
     }
   };
 
@@ -36,33 +37,34 @@ export default function AdminReturnBook() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setBorrowers(res.data);
+      setBorrowers(res.data.borrowers);
       setSelectedBook(bookId);
+      setMessage('');
     } catch (err) {
       console.error(err);
-      alert('Failed to load borrowers');
+      setMessage('❌ Failed to load borrowers');
     }
   };
 
-  // Admin returns book for specific user
-  const returnBook = async (userId) => {
+  // Admin confirms book return
+  const confirmReturn = async (userId) => {
     try {
       await axios.post(
         `http://localhost:5000/library/books/${selectedBook}/return`,
-        { userId }, // tell backend which user is returning
+        { userId, adminConfirm: true },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      alert('Book returned successfully!');
+      setMessage('✅ Book return confirmed successfully!');
 
-      // Reload borrowers & books
+      // Refresh data
       loadBorrowers(selectedBook);
       loadBooks();
     } catch (err) {
       console.error(err);
-      alert('Failed to return book');
+      setMessage('❌ Failed to confirm return');
     }
   };
 
@@ -72,6 +74,12 @@ export default function AdminReturnBook() {
   return (
     <div className="p-8">
       <h1 className="text-4xl font-bold mb-5">↩️ Return Borrowed Books</h1>
+
+      {message && (
+        <div className="mb-4 p-3 rounded bg-yellow-100 text-yellow-800">
+          {message}
+        </div>
+      )}
 
       {/* Book selector */}
       <div className="mb-6">
@@ -106,6 +114,8 @@ export default function AdminReturnBook() {
                   <th>User</th>
                   <th>Email</th>
                   <th>Borrowed At</th>
+                  <th>Return Requested</th>
+                  <th>Returned At</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -116,13 +126,21 @@ export default function AdminReturnBook() {
                     <td>{b.user?.name}</td>
                     <td>{b.user?.email}</td>
                     <td>{new Date(b.borrowedAt).toLocaleDateString()}</td>
+                    <td>{b.returnRequested ? '✅' : '❌'}</td>
                     <td>
-                      <button
-                        className="btn btn-sm btn-error"
-                        onClick={() => returnBook(b.user._id)}
-                      >
-                        Return Book
-                      </button>
+                      {b.returnedAt
+                        ? new Date(b.returnedAt).toLocaleDateString()
+                        : '-'}
+                    </td>
+                    <td>
+                      {!b.returnedAt && (
+                        <button
+                          className="btn btn-sm btn-success"
+                          onClick={() => confirmReturn(b.user._id)}
+                        >
+                          Confirm Return
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

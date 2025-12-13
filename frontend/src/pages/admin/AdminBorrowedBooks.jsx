@@ -33,7 +33,7 @@ export default function AdminBorrowedBooks() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      return res.data;
+      return res.data.borrowers; // return borrowers array
     } catch (err) {
       console.error(err);
       alert('Failed to load borrowers');
@@ -96,6 +96,8 @@ export default function AdminBorrowedBooks() {
                         <th>User</th>
                         <th>Email</th>
                         <th>Borrowed At</th>
+                        <th>Return Requested</th>
+                        <th>Returned At</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -104,6 +106,12 @@ export default function AdminBorrowedBooks() {
                           <td>{b.user?.name}</td>
                           <td>{b.user?.email}</td>
                           <td>{new Date(b.borrowedAt).toLocaleDateString()}</td>
+                          <td>{b.returnRequested ? '✅' : '❌'}</td>
+                          <td>
+                            {b.returnedAt
+                              ? new Date(b.returnedAt).toLocaleDateString()
+                              : '-'}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
