@@ -1,0 +1,38 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: library_backend
+    ports:
+      - '5000:5000'
+    environment:
+      - NODE_ENV=production
+    networks: -"library"
+    depends_on:
+      - mongo
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: library_frontend
+    ports:
+      - '3000:80'
+    networks:
+      - 'library'
+    depends_on:
+      - backend
+
+  mongo:
+    image: mongo:latest
+    container_name: library_mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - 'library'
+
+volumes:
+  mongo_data:

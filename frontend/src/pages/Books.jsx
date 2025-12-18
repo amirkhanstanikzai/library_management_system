@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import socket from '../socket'; // ✅ import your existing socket instance
 
 export default function Books() {
   const [books, setBooks] = useState([]);
@@ -9,16 +10,14 @@ export default function Books() {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sort, setSort] = useState('title-asc');
-  const [categories, setCategories] = useState(['All']); // dynamic categories
+  const [categories, setCategories] = useState(['All']);
 
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [booksPerPage, setBooksPerPage] = useState(10);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Adjust books per page based on screen width
   useEffect(() => {
     const updateBooksPerPage = () => {
       setBooksPerPage(window.innerWidth < 768 ? 5 : 10);
@@ -28,7 +27,6 @@ export default function Books() {
     return () => window.removeEventListener('resize', updateBooksPerPage);
   }, []);
 
-  // Check for category query param
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const categoryParam = params.get('category');
@@ -51,7 +49,6 @@ export default function Books() {
         const { data } = await axios.get(url, config);
         setBooks(data);
 
-        // Extract unique categories dynamically
         const uniqueCategories = [
           'All',
           ...new Set(data.map((b) => b.category).filter(Boolean)),
@@ -67,7 +64,37 @@ export default function Books() {
     fetchBooks();
   }, []);
 
-  // Filtered and sorted books (search by title, author, category)
+  // ✅ Socket.IO real-time updates
+  useEffect(() => {
+    const handleBookBorrowed = (update) => {
+      setBooks((prev) =>
+        prev.map((b) =>
+          b._id === update.bookId
+            ? { ...b, borrowedCopies: update.borrowedCopies }
+            : b
+        )
+      );
+    };
+
+    const handleBookReturned = (update) => {
+      setBooks((prev) =>
+        prev.map((b) =>
+          b._id === update.bookId
+            ? { ...b, borrowedCopies: update.borrowedCopies }
+            : b
+        )
+      );
+    };
+
+    socket.on('bookBorrowed', handleBookBorrowed);
+    socket.on('bookReturned', handleBookReturned);
+
+    return () => {
+      socket.off('bookBorrowed', handleBookBorrowed);
+      socket.off('bookReturned', handleBookReturned);
+    };
+  }, []);
+
   const filteredBooks = books
     .filter((b) =>
       selectedCategory === 'All' ? true : b.category === selectedCategory
@@ -91,7 +118,6 @@ export default function Books() {
       return 0;
     });
 
-  // Pagination logic
   const indexOfLastBook = currentPage * booksPerPage;
   const indexOfFirstBook = indexOfLastBook - booksPerPage;
   const currentBooks = filteredBooks.slice(indexOfFirstBook, indexOfLastBook);
@@ -124,7 +150,7 @@ export default function Books() {
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
-            setCurrentPage(1); // reset to first page on search
+            setCurrentPage(1);
           }}
         />
 
@@ -138,7 +164,7 @@ export default function Books() {
                 }`}
                 onClick={() => {
                   setSelectedCategory(cat);
-                  setCurrentPage(1); // reset page on category change
+                  setCurrentPage(1);
                 }}
               >
                 {cat}
@@ -218,7 +244,6 @@ export default function Books() {
           })}
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center mt-6 gap-2 flex-wrap">
             {Array.from({ length: totalPages }, (_, idx) => (

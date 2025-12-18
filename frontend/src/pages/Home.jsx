@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import socket from '../socket'; // ✅ import socket instance
 
 export default function Home() {
   const navigate = useNavigate();
@@ -19,17 +20,46 @@ export default function Home() {
     fetchCategories(); // fetch categories dynamically
   }, []);
 
+  // ✅ Socket.IO: live updates for borrowed/returned books
+  useEffect(() => {
+    const handleBookBorrowed = (update) => {
+      setFeaturedBooks((prevBooks) =>
+        prevBooks.map((b) =>
+          b._id === update.bookId
+            ? { ...b, borrowedCopies: update.borrowedCopies }
+            : b
+        )
+      );
+    };
+
+    const handleBookReturned = (update) => {
+      setFeaturedBooks((prevBooks) =>
+        prevBooks.map((b) =>
+          b._id === update.bookId
+            ? { ...b, borrowedCopies: update.borrowedCopies }
+            : b
+        )
+      );
+    };
+
+    socket.on('bookBorrowed', handleBookBorrowed);
+    socket.on('bookReturned', handleBookReturned);
+
+    return () => {
+      socket.off('bookBorrowed', handleBookBorrowed);
+      socket.off('bookReturned', handleBookReturned);
+    };
+  }, []);
+
   // Fetch recent books dynamically
   const fetchNewBooks = async () => {
     try {
       const url = token
         ? 'http://localhost:5000/library/books'
         : 'http://localhost:5000/library/books/public';
-
       const config = token
         ? { headers: { Authorization: `Bearer ${token}` } }
         : {};
-
       const { data } = await axios.get(url, config);
 
       // Sort by recently added and take top 4
@@ -49,11 +79,9 @@ export default function Home() {
       const url = token
         ? 'http://localhost:5000/library/books'
         : 'http://localhost:5000/library/books/public';
-
       const config = token
         ? { headers: { Authorization: `Bearer ${token}` } }
         : {};
-
       const { data } = await axios.get(url, config);
 
       // Extract unique categories from books
@@ -137,13 +165,7 @@ export default function Home() {
         [bookId]: 'You have successfully borrowed this book.',
       }));
 
-      setFeaturedBooks((prevBooks) =>
-        prevBooks.map((b) =>
-          b._id === bookId
-            ? { ...b, borrowedCopies: (b.borrowedCopies || 0) + 1 }
-            : b
-        )
-      );
+      // ✅ No need to manually update borrowedCopies; Socket.IO updates it live
     } catch (err) {
       const msg =
         err.response?.data?.message ||

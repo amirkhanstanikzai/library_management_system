@@ -21,6 +21,7 @@ export default function BorrowedBooks() {
         }
       );
       setBooks(res.data);
+      setMessage(null); // Clear any previous messages
     } catch (err) {
       console.error(err);
       setMessage('Failed to load borrowed books');
@@ -36,9 +37,11 @@ export default function BorrowedBooks() {
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      setMessage('Return request sent successfully.');
       loadBorrowedBooks();
     } catch (err) {
       console.error(err);
+      setMessage('Failed to request return.');
     }
   };
 
@@ -57,7 +60,9 @@ export default function BorrowedBooks() {
       </h1>
 
       {message && (
-        <p className="text-red-600 mb-4 text-center md:text-left">{message}</p>
+        <p className="text-center md:text-left text-sm text-red-600 mb-4">
+          {message}
+        </p>
       )}
 
       {books.length === 0 ? (

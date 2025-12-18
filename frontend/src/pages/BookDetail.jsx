@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import socket from '../socket'; // ✅ import socket instance
 
 export default function BookDetail() {
   const { id } = useParams();
@@ -8,12 +9,10 @@ export default function BookDetail() {
 
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState({ text: '', type: '' }); // type: 'success' | 'error'
+  const [message, setMessage] = useState({ text: '', type: '' });
 
-  // Check if user is logged in
   const isLoggedIn = () => !!localStorage.getItem('token');
 
-  // Fetch book details from backend
   const fetchBook = async () => {
     try {
       const res = await axios.get(
@@ -31,7 +30,33 @@ export default function BookDetail() {
     fetchBook();
   }, [id]);
 
-  // Borrow book
+  // ✅ Socket.IO updates
+  useEffect(() => {
+    const handleBookBorrowed = (update) => {
+      if (update.bookId === id) {
+        setBook(
+          (prev) => prev && { ...prev, borrowedCopies: update.borrowedCopies }
+        );
+      }
+    };
+
+    const handleBookReturned = (update) => {
+      if (update.bookId === id) {
+        setBook(
+          (prev) => prev && { ...prev, borrowedCopies: update.borrowedCopies }
+        );
+      }
+    };
+
+    socket.on('bookBorrowed', handleBookBorrowed);
+    socket.on('bookReturned', handleBookReturned);
+
+    return () => {
+      socket.off('bookBorrowed', handleBookBorrowed);
+      socket.off('bookReturned', handleBookReturned);
+    };
+  }, [id]);
+
   const borrowBook = async () => {
     if (!isLoggedIn()) return navigate('/login');
 
@@ -43,7 +68,7 @@ export default function BookDetail() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage({ text: 'Book borrowed successfully!', type: 'success' });
-      fetchBook(); // refresh book data
+      // no need to fetchBook() anymore, Socket.IO will update automatically
     } catch (error) {
       console.error(error);
       setMessage({
@@ -53,7 +78,6 @@ export default function BookDetail() {
     }
   };
 
-  // Return book
   const returnBook = async () => {
     if (!isLoggedIn()) return navigate('/login');
 
@@ -65,7 +89,7 @@ export default function BookDetail() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage({ text: 'Book returned successfully!', type: 'success' });
-      fetchBook(); // refresh book data
+      // no need to fetchBook() anymore, Socket.IO will update automatically
     } catch (error) {
       console.error(error);
       setMessage({
@@ -98,7 +122,6 @@ export default function BookDetail() {
           ← Back
         </button>
 
-        {/* Status Message */}
         {message.text && (
           <div
             className={`p-3 mb-4 rounded ${
@@ -112,7 +135,6 @@ export default function BookDetail() {
         )}
 
         <div className="flex flex-col md:flex-row gap-8">
-          {/* Image */}
           <div className="w-full md:w-1/3">
             <img
               src={
@@ -125,7 +147,6 @@ export default function BookDetail() {
             />
           </div>
 
-          {/* Info */}
           <div className="w-full md:w-2/3 flex flex-col gap-4">
             <h1 className="text-4xl font-bold">{book.title}</h1>
             <h3 className="text-xl opacity-70">by {book.author}</h3>
@@ -148,7 +169,6 @@ export default function BookDetail() {
               {availableCopies > 0 ? availableCopies : 'Out of stock'}
             </p>
 
-            {/* Borrow/Return Buttons */}
             {isLoggedIn() ? (
               <div className="flex gap-4 mt-4">
                 <button

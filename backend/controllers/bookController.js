@@ -24,7 +24,7 @@ export const createBook = async (req, res) => {
       author,
       description,
       totalCopies: totalCopies || 1,
-      category, // ✅ Added category
+      category,
       image: imagePath,
     });
 
@@ -50,7 +50,7 @@ export const getBooks = async (req, res) => {
   }
 };
 
-// GET BOOKS BORROWED BY LOGGED-IN USER (FIXED)
+// GET BOOKS BORROWED BY LOGGED-IN USER
 export const getMyBorrowedBooks = async (req, res) => {
   try {
     const books = await Book.find({ 'borrowers.user': req.user._id }).populate(
@@ -115,7 +115,7 @@ export const updateBook = async (req, res) => {
     if (author) book.author = author;
     if (description) book.description = description;
     if (totalCopies) book.totalCopies = totalCopies;
-    if (category) book.category = category; // ✅ Update category
+    if (category) book.category = category;
 
     if (req.file) {
       if (book.image && fs.existsSync(book.image)) fs.unlinkSync(book.image);
@@ -150,7 +150,7 @@ export const deleteBook = async (req, res) => {
   }
 };
 
-// BORROW BOOK (User)
+// BORROW BOOK (User) ✅ SOCKET EVENT ADDED
 export const borrowBook = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
@@ -171,6 +171,14 @@ export const borrowBook = async (req, res) => {
     book.borrowers.push({ user: req.user._id });
 
     await book.save();
+
+    // 🔔 WebSocket emit
+    req.app.get('io')?.emit('bookBorrowed', {
+      bookId: book._id,
+      userId: req.user._id,
+      borrowedCopies: book.borrowedCopies,
+    });
+
     res.json({ message: 'Book borrowed successfully', book });
   } catch (error) {
     console.error('Borrow Book Error:', error);
@@ -180,7 +188,7 @@ export const borrowBook = async (req, res) => {
   }
 };
 
-// RETURN BOOK (User + Admin)
+// RETURN BOOK (User + Admin) ✅ SOCKET EVENTS ADDED
 export const returnBook = async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
@@ -206,10 +214,25 @@ export const returnBook = async (req, res) => {
       book.borrowers.splice(borrowerIndex, 1);
 
       await book.save();
+
+      // 🔔 WebSocket emit (confirmed return)
+      req.app.get('io')?.emit('bookReturned', {
+        bookId: book._id,
+        userId: targetUserId,
+        borrowedCopies: book.borrowedCopies,
+      });
+
       return res.json({ message: 'Return confirmed by admin', book });
     } else {
       borrower.returnRequested = true;
       await book.save();
+
+      // 🔔 WebSocket emit (return requested)
+      req.app.get('io')?.emit('bookReturnRequested', {
+        bookId: book._id,
+        userId: targetUserId,
+      });
+
       return res.json({
         message: 'Return requested. Admin must approve.',
         book,
