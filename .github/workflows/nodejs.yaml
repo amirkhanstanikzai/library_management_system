@@ -21,7 +21,7 @@ jobs:
 
       # 2️⃣ Debug repo structure
       - name: List repository structure
-        run: ls -R ../
+        run: ls -R ..
 
       # 3️⃣ Setup Node.js
       - name: Setup Node.js
@@ -37,15 +37,15 @@ jobs:
 
       # 5️⃣ Run ESLint
       - name: Run ESLint
-        run: npx eslint . --ext .js
+        run: npm run lint
 
-      # 6️⃣ Run Jest Tests
+      # 6️⃣ Run Jest Tests with Coverage
       - name: Run Jest Tests
-        run: npx jest --coverage
+        run: npm run test:coverage
 
       # 7️⃣ Upload coverage
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: ./coverage
+          path: backend/coverage

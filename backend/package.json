@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --runInBand --detectOpenHandles --forceExit",
+    "test:coverage": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --coverage --runInBand",
     "dev": "nodemon server.js",
     "start": "node server.js",
     "lint": "eslint . --ext .js,.mjs,.cjs",
