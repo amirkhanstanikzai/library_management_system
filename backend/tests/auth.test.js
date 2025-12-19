@@ -11,11 +11,6 @@ import User from '../models/User.js';
 
 jest.setTimeout(30000); // 30 seconds
 
-jest.mock('../utils/sendEmail.js', () => ({
-  __esModule: true,
-  default: jest.fn(),
-}));
-
 let mongoServer;
 
 beforeAll(async () => {
