@@ -39,6 +39,13 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+     - name: Run Jest Tests
+       run: npm run test:coverage
+       env:
+       NODE_ENV: test
+       JWT_SECRET: testsecret123
+
+
       # 6️⃣ Run Jest Tests with Coverage
       - name: Run Jest Tests
         run: npm run test:coverage

@@ -19,12 +19,15 @@ export default defineConfig([
   // 2️⃣ Jest test files
   // -----------------------------
   {
-    files: ['**/*.test.js'],
+    files: ['**/*.test.js', '**/setupTests.js'],
     languageOptions: {
-      globals: {
-        ...globals.node, // keep Node globals
-        ...globals.jest, // add all Jest globals
-      },
+      // mark globals as readonly
+      globals: Object.fromEntries(
+        Object.entries({ ...globals.node, ...globals.jest }).map(([k]) => [
+          k,
+          'readonly',
+        ])
+      ),
     },
   },
 ]);
